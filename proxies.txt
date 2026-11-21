@@ -1,0 +1,9 @@
+# put your proxies here, one per line. lines starting with # are ignored.
+# formats that work:
+#   1.2.3.4:8080                       (type is auto-detected: http or socks5)
+#   http://1.2.3.4:8080
+#   http://user:pass@1.2.3.4:8080
+#   socks5://1.2.3.4:1080
+#   socks5://user:pass@1.2.3.4:1080
+#   1.2.3.4:1080:user:pass
+# only use proxies you own or are allowed to use.

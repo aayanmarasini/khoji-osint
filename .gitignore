@@ -1,0 +1,4 @@
+results/
+proxies_alive.txt
+__pycache__/
+*.pyc
