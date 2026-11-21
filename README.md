@@ -1,111 +1,79 @@
 # KHOJI OSINT
 ![KHOJI OSINT](khoji-osint.png)
 
-👨‍💻 Made by **@aayanmarasini**
+Developer: **@aayanmarasini**
 
----
+## ✨ Features
 
-## 🚀 How to run
+- 🔍 **Username search** on 2400+ sites: social media, tech, education, gaming and more, from all countries
+- ✅ **Verified results**: only confirmed profiles are shown as Found
+- 📇 **Profile details**: name, location, bio, email and number when the profile page shows them
+- 📧 **Email leak check**
+- 🔑 **Password leak check**
+- 🌐 **Proxy support** with fast auto check (HTTP and SOCKS5)
+- ⚡ **Multi-worker scanning**
+- 🗂️ **Filters** by category or country
 
-You only need **Python 3**. Nothing else to install.
+## 📦 Installation
 
-**🪟 Windows**
-Double click `run.bat` (or run `python khoji.py`).
+Requires Python 3.
 
-**🐧 Kali / Linux / Mac**
 ```
 git clone https://github.com/YOUR-USERNAME/khoji-osint.git
 cd khoji-osint
+```
+
+## ▶️ Usage
+
+**Windows:** double click `run.bat`
+
+**Kali / Linux / Mac:**
+```
 python3 khoji.py
 ```
-Or run `./run.sh` (if it says permission denied: `chmod +x run.sh`).
-To update later, run `git pull` inside the folder.
 
----
+### Menu
 
-## 📋 Menu
-
-| # | Option | What it does |
-|---|--------|--------------|
-| 1 | 🔍 Username Search | Scans the username on 2400+ sites |
-| 2 | 📧 Email Leak Check | Checks if an email is in a known breach |
-| 3 | 🔑 Password Leak Check | You type a password, it shows on screen, and tells you if it leaked and how many times |
-| 4 | 🌐 Proxy | Load `proxies.txt`, add one by hand, or turn it off |
-| 0 | 🚪 Exit | |
-
----
-
-## 🔍 Username search
-
-It checks about **2400 sites**: Instagram, Facebook, X, TikTok, Snapchat, YouTube, Telegram, Reddit, LinkedIn and so on, plus the big sites of a lot of countries, gaming, music, video, coding and education sites.
-
-You can filter by group or country when it asks: `social`, `tech`, `education`, or a country code like `in`, `jp`, `ru`, `kr`, `cn`. Leave it empty to scan everything.
-
-While it runs you see this:
 ```
-[Found] GitHub  https://github.com/name
-    name/loc : Some Name | City
-    email    : name@mail.com
-    number   : +977 98xxxxxxxx
-[Not found] Facebook
+[1] Username Search
+[2] Email Leak Check
+[3] Password Leak Check
+[4] Proxy
+[0] Exit
 ```
 
-### ✅ What counts as Found
-A site is only shown as Found when all of this is true:
-- the site says the profile exists
-- it says the same thing again on a second request
-- two random made up names on that same site both come back Not found
-- if the site has no special "profile" marker, the username must also appear on the page
-- the page is not a captcha, "checking your browser" or login wall (those are treated as blocked, never as found or not found)
+### Command line
 
-If any of those fail it is **not** shown as Found. Email and number are only printed when they are written on the profile page itself. Nothing is guessed.
+```
+python khoji.py -u username
+python khoji.py -u username --only social,tech
+python khoji.py -u username -f proxies.txt
+python khoji.py -u username -w 150
+python khoji.py -e email@example.com
+```
 
-### ❓ Unverified (shown first, Found comes last)
-Some sites block bots (Instagram, Facebook, X and TikTok do it a lot) or say "found" for every name. Those can't be confirmed, so they never go in Found. Blocked ones get a second try, slower, with a new fingerprint. Whatever is still left is printed at the end as a list with the reason, and saved in the results file, so you can open those few by hand.
-
-### ⚡ Workers
-It checks many sites at the same time. Default is 40 workers (80 when a proxy is on). When you start a username search it asks how many you want, or use `-w 120`. Max 300. More workers = faster, but also more chance to get blocked without proxies.
-
-### 📱 Social media with their own checks
-Instagram, Facebook, X, TikTok, Threads, Reddit, Snapchat, YouTube, Telegram, Pinterest, Twitch, VK, Tumblr, Medium, Spotify, GitHub, Steam.
-
-These need more than a plain page request, so each one has its own list of ways to ask (the official profile api, the link preview page, oembed). The tool tries them one after another until one gives a clear answer. For these sites "Not found" is only printed when the site really says the profile does not exist (a 404 or a "page not found" text). If the site just blocks you, it goes to Unverified instead, so you never get a wrong Not found.
-
-### 🛡️ Not getting blocked
-- every request has a new fingerprint (browser, language, headers, referer)
-- only about one request per second to the same site
-- on 403 / 429 it waits and tries again
-- with proxies on, each request can use a different proxy
-
----
+| Option | Description |
+|--------|-------------|
+| `-u` | Username to search |
+| `-e` | Email to check |
+| `-f` | Proxy file |
+| `-p` | Single proxy |
+| `-w` | Number of workers (max 300) |
+| `--only` | Filter: `social`, `tech`, `education` or a country code (`in`, `jp`, `ru`...) |
+| `-q` | Hide "Not found" lines |
 
 ## 🌐 Proxies
 
-Add them to `proxies.txt`, one per line:
+Add proxies to `proxies.txt`, one per line:
+
 ```
 1.2.3.4:8080
 http://user:pass@1.2.3.4:8080
 socks5://1.2.3.4:1080
-1.2.3.4:1080:user:pass
-```
-Loading is fast: dead ones are dropped in a second or two, up to 300 are tested at once. Press `Ctrl+C` while it checks and it stops right away and keeps the ones that already passed. Dead, slow and transparent proxies get dropped. If every proxy dies, the tool stops. It will not switch to your own IP by itself.
-
----
-
-## 💻 Command line
-
-```
-python khoji.py -u name
-python khoji.py -u name --only social,tech
-python khoji.py -u name -f proxies.txt
-python khoji.py -u name -f proxies.txt -w 150
-python khoji.py -u name -q        (hide the Not found lines)
-python khoji.py -e you@mail.com
 ```
 
----
+Results are saved in the `results` folder.
 
-📁 Results are saved in the `results` folder.
+## ⚠️ Disclaimer
 
-⚠️ Use it on yourself, or when you have a real reason.
-
+For educational use and for checking your own accounts. Use it responsibly.
