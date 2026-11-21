@@ -1,4 +1,5 @@
 # KHOJI OSINT
+![KHOJI OSINT](khoji-osint.png)
 made by @aayanmarasini
 
 Put a username, see where it exists. Also checks emails and passwords against known leaks.
