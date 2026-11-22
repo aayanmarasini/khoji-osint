@@ -1,0 +1,21 @@
+## License
+
+KHOJI OSINT is free for everyone to use, study, change and share, as long as it is for noncommercial purposes. It is released under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+
+**What you can do**
+
+- Use it for personal projects, learning and research
+- Read the code, change it and build your own version
+- Share it with friends or put your own version on GitHub, with the license and my name kept with it
+- Use it in a school, college, charity or other nonprofit
+
+**What you can't do**
+
+- Sell this tool, or a modified version of it
+- Charge money for access to it, for example as a paid tool, a paid service or a paid course download
+- Use it as part of a product or business that makes money
+- Remove my name or the license and call it your own work
+
+The license covers the code in this repository, including `sites.json`. The email and password leak checks use outside services (XposedOrNot and Pwned Passwords), and those have their own terms that you need to follow too.
+
+Copyright (c) 2026 Aayan Marasini
