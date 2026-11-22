@@ -3,12 +3,12 @@ import argparse, base64, gzip, hashlib, http.client, json, os, queue, random, re
 from urllib.parse import urlparse, urljoin, quote, unquote
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-WORKERS = 0           # 0 = auto (40 without proxy, 80 with proxy)
+WORKERS = 0           # 0 = auto
 TIMEOUT = 12
 CHK_TIMEOUT = 5
 PROXY_WORKERS = 300
 MAXMS = 8000
-HOST_GAP = 0.7        # min seconds between two requests to the same site (anti block)
+HOST_GAP = 0.7        # seconds between hits on the same site, otherwise they ban me
 TESTS = ("https://api.ipify.org", "https://icanhazip.com")
 CTX = ssl.create_default_context()
 IPRE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$|^[0-9a-fA-F:]{3,39}$")
@@ -18,7 +18,7 @@ try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
-os.system("")   # so colors work in windows cmd
+os.system("")   # windows cmd needs this or colors look broken
 
 
 def col(n):
@@ -44,9 +44,9 @@ BAD = {"www", "home", "about", "user", "users", "profile", "login", "index", "sh
 
 
 
+# threads: run fn on all items, results come out as they finish
+# daemon threads so ctrl+c kills everything
 def pmap(fn, items, workers):
-    """run fn on every item with many workers, yield results as they finish.
-    workers are daemon threads, so Ctrl+C stops everything at once."""
     todo, out, stop = queue.Queue(), queue.Queue(), threading.Event()
     n = len(items)
     for it in items:
@@ -91,7 +91,7 @@ def banner():
     print(f"  {D}developer: {X}{C}{DEV}{X}\n")
 
 
-# ---------------- fingerprint (new one for every single request) ----------------
+# ---------------- browser fingerprint, new one every request ----------------
 
 def make_uas():
     o = []
@@ -134,12 +134,12 @@ def fp():
     if ref:
         h["Referer"] = ref
     items = list(h.items())
-    random.shuffle(items)                  # header order changes too
+    random.shuffle(items)                  # shuffle header order too
     ua_first = [i for i in items if i[0] == "User-Agent"]
     return dict(ua_first + [i for i in items if i[0] != "User-Agent"])
 
 
-# wait a bit between hits on the same site
+# small delay when hitting the same site again
 _HL, _HN = threading.Lock(), {}
 
 
@@ -153,7 +153,7 @@ def host_wait(host):
         time.sleep(t - now)
 
 
-# ---------------- network layer (http proxy / socks5 / direct) ----------------
+# ---------------- network stuff (http proxy / socks5 / direct) ----------------
 
 class ProxyError(Exception):
     pass
@@ -302,8 +302,8 @@ def real_ip():
     return None
 
 
+# quick hello to guess socks5 or http, dead ones get dropped here too
 def sniff(px):
-    """one tiny hello to see if the proxy talks socks5 or http. also drops dead ones fast."""
     try:
         s = socket.create_connection((px["host"], px["port"]), 3)
     except OSError:
@@ -490,8 +490,8 @@ def walled(body):
     return any(w in head for w in WALLS)
 
 
+# if the string has {} the username goes in there, compared in lowercase
 def has(strs, body, user):
-    # strings with {} get the username put in and are compared lowercase
     low = None
     for x in arr(strs):
         if "{}" in x:
@@ -526,8 +526,8 @@ def judge(s, status, body, user=""):
         ok = False
     if ok:
         return "found"
-    # strict sites: "not found" only when the site clearly says so (404 or a missing-page text),
-    # anything else is most likely a block, so it stays unverified
+    # strict sites: only say "not found" if the site really says it (404 or a miss text)
+    # otherwise it's probably a block so leave it unverified
     if s.get("strict") and not (status in (404, 410) or (s.get("missCode") and status == s["missCode"]) or has(s.get("miss"), body, user)):
         return "unknown"
     return "notfound"
@@ -572,7 +572,7 @@ def contacts(b, site_url):
         dom = ml.split("@")[1]
         if any(j in ml for j in EMAIL_JUNK) or ml.endswith((".png", ".jpg", ".gif", ".svg", ".webp", ".js", ".css")):
             continue
-        if dom.endswith(root) and root:   # site's own support mail, skip
+        if dom.endswith(root) and root:   # the site's own support mail, skip
             continue
         if ml not in mails:
             mails.append(ml)
@@ -607,8 +607,8 @@ def hit_one(s, user, prof=False):
         host = urlparse(target).hostname or ""
         code, body, fin = 0, "", target
         for i in range(4):
-            h = fp()   # new fingerprint every try
-            if s.get("ua"):     # some sites only show a profile to link-preview bots
+            h = fp()   # new headers on every try
+            if s.get("ua"):     # a few sites only show the profile to link preview bots
                 h = {"User-Agent": s["ua"], "Accept": "text/html,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9"}
             h.update({k: v for k, v in (s.get("headers") or {}).items() if k.lower() != "user-agent"})
             px = POOL.pick()
@@ -622,11 +622,11 @@ def hit_one(s, user, prof=False):
                 r["why"] = "proxy: " + str(e)
                 continue
             except (OSError, http.client.HTTPException, ssl.SSLError) as e:
-                r["why"] = str(e)[:60]       # timeout / reset, try again
+                r["why"] = str(e)[:60]       # timeout or reset, just try again
                 code = 0
                 time.sleep(0.5 + i)
                 continue
-            if code in (403, 429, 503) or code >= 520 or walled(body):   # blocked, wait and try again
+            if code in (403, 429, 503) or code >= 520 or walled(body):   # got blocked, wait and retry
                 time.sleep(1.5 * (i + 1) + random.random())
                 continue
             break
@@ -644,7 +644,7 @@ def hit_one(s, user, prof=False):
         if r["state"] == "unknown":
             r["why"] = "blocked"
         if r["state"] == "found":
-            # no proof string in config, so the name has to be on the page
+            # no proof string in the config so the name must show up on the page
             if s.get("type", "status_code") == "status_code" and not arr(s.get("found")):
                 if user.lower() not in body.lower() and user.lower() not in strip(body):
                     r["state"] = "unknown"
@@ -658,9 +658,9 @@ def hit_one(s, user, prof=False):
     return r
 
 
+# some sites have a few different ways to ask ("tries"), go through them one by one
+# until we get a clear found / not found
 def hit(s, user, prof=False):
-    # a site can have several ways to ask ("tries"), they are used one after the other
-    # until one of them gives a clear found / not found
     tries = s.get("tries")
     if not tries:
         return hit_one(s, user, prof)
@@ -688,9 +688,9 @@ def ctrl_name(s):
     return None
 
 
+# a "found" only counts if it comes back found a 2nd time
+# and 2 random fake names on the same site both come back not found
 def verified_hit(s, user, prof=True):
-    # Found only counts if: it is found again on a 2nd request, and 2 random
-    # made up names on the same site both come back not found.
     r = hit(s, user, prof)
     if r["state"] != "found":
         return r
@@ -711,7 +711,7 @@ def verified_hit(s, user, prof=True):
     return r
 
 
-# ---------------- scan with live output ----------------
+# ---------------- scan + live output ----------------
 
 def say(msg):
     sys.stdout.write("\r\033[2K" + msg + "\n")
@@ -773,8 +773,7 @@ def scan(user, sites, show_all=True, prof=True):
     by = {s["name"]: s for s in sites}
     try:
         one_pass(user, sites, st, res, left, show_all, prof, worker_count(), 0, n)
-        # second chance for the ones that were blocked or timed out:
-        # slower, fewer at once, new fingerprints
+        # 2nd try for the blocked / timed out ones, slower and with fewer workers
         retry = [by[r["name"]] for r in left if r.get("why") == "blocked" or r["state"] == "error"]
         if retry:
             keep = [r for r in left if by[r["name"]] not in retry]
