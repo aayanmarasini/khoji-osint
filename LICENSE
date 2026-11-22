@@ -18,4 +18,4 @@ KHOJI OSINT is free for everyone to use, study, change and share, as long as it 
 
 The license covers the code in this repository, including `sites.json`. The email and password leak checks use outside services (XposedOrNot and Pwned Passwords), and those have their own terms that you need to follow too.
 
-Copyright (c) 2026 Aayan Marasini
+Copyright (c) 2026 Aayan Marasini.
