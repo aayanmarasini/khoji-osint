@@ -19,7 +19,7 @@ Developer: **@aayanmarasini**
 Requires Python 3.
 
 ```
-git clone https://github.com/YOUR-USERNAME/khoji-osint.git
+git clone https://github.com/aayanmarasini/khoji-osint.git
 cd khoji-osint
 ```
 
